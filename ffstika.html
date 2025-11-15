@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedule</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* CSS untuk Tampilan */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-top: 0;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        /* Styling Tabel */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            min-height: 50px; /* Memberi tinggi minimum */
+        }
+
+        /* Header Tabel */
+        thead th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Kolom Waktu */
+        tbody td:first-child {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* Sel Mata Pelajaran yang bisa di-edit */
+        td[contenteditable="true"] {
+            background-color: #fff;
+            cursor: text;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Efek saat sel di-klik/hover */
+        td[contenteditable="true"]:hover,
+        td[contenteditable="true"]:focus {
+            background-color: #f0f8ff;
+            outline: 2px solid #007bff;
+        }
+
+        /* Tombol Download */
+        .button-container {
+            text-align: center;
+        }
+
+        #downloadBtn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #downloadBtn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="scheduleContainer">
+        <h1>My Schedule</h1>
+        <p>Klik pada sel kosong untuk mengetik mata pelajaran Anda.</p>
+
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Waktu</th>
+                    <th>Senin</th>
+                    <th>Selasa</th>
+                    <th>Rabu</th>
+                    <th>Kamis</th>
+                    <th>Jumat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>07:00 - 07:45</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>07:45 - 08:30</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>08:30 - 09:15</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>09:15 - 10:00</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                </tr>
+                <tr>
+                    <td>10:00 - 10:45</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>10:45 - 11:30</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>11:30 - 12:15</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>12:15 - 13:00</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Istirahat</td>
+                    <td contenteditable="true" style="background-color: #fffacd;">Pulang</td>
+                </tr>
+                 <tr>
+                    <td>13:00 - 13:45</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td style="background-color: #f0f0f0;"></td>
+                </tr>
+                 <tr>
+                    <td>13:45 - 14:30</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true"></td>
+                    <td style="background-color: #f0f0f0;"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="button-container">
+        <button id="downloadBtn">Download Jadwal (PNG)</button>
+    </div>
+
+    <script>
+        // JavaScript untuk Fungsionalitas Download
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            // Kita memberitahu tombol "Loading..." agar user tahu proses sedang berjalan
+            this.textContent = 'Loading...';
+            this.disabled = true;
+
+            // Memilih elemen yang ingin di-download (seluruh tabel)
+            const scheduleTable = document.getElementById('scheduleTable');
+
+            // Menggunakan library html2canvas untuk "memotret" tabel
+            html2canvas(scheduleTable, { 
+                scale: 2, // Meningkatkan resolusi gambar agar lebih tajam
+                logging: false, // Menyembunyikan log di console
+                useCORS: true 
+            }).then(canvas => {
+                // Setelah "foto" (canvas) jadi:
+                
+                // 1. Buat elemen link (<a>) virtual
+                const link = document.createElement('a');
+                
+                // 2. Tentukan nama file saat di-download
+                link.download = 'Jadwal_Pelajaran_Saya.png';
+                
+                // 3. Ubah "foto" (canvas) menjadi link data gambar PNG
+                link.href = canvas.toDataURL('image/png');
+                
+                // 4. Klik link virtual tersebut secara otomatis untuk memulai download
+                link.click();
+
+                // 5. Kembalikan tombol ke keadaan semula
+                this.textContent = 'Download Jadwal (PNG)';
+                this.disabled = false;
+
+            }).catch(err => {
+                // Jika terjadi error
+                console.error('Oops, sesuatu yang salah terjadi!', err);
+                alert('Maaf, gagal mendownload jadwal.');
+                this.textContent = 'Download Jadwal (PNG)';
+                this.disabled = false;
+            });
+        });
+    </script>
+
+</body>
+</html>
