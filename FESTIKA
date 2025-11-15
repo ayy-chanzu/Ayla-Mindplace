@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Schedule</title>
+  <style>
+    :root{--accent:#2563eb;--muted:#6b7280}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;line-height:1.4;margin:0;background:#f8fafc;color:#0f172a;padding:20px}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:1.4rem;margin:0}
+    p.lead{margin:6px 0 18px;color:var(--muted)}
+    .card{background:white;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);padding:18px}
+
+    table{width:100%;border-collapse:collapse;text-align:left}
+    th, td{padding:10px 8px;border-bottom:1px solid #eef2f7}
+    th{background:#f1f5f9;font-weight:600;color:#111827;font-size:0.9rem}
+    td.time{width:110px;color:var(--muted);font-weight:600}
+    td.cell{min-width:120px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+    button{background:var(--accent);color:white;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+    button.ghost{background:transparent;color:var(--accent);border:1px solid #e6eefc}
+    .small{padding:6px 8px;font-size:0.9rem}
+
+    .days-row{display:flex;gap:8px;margin-top:10px}
+    .day-edit{flex:1;background:#f8fafc;padding:10px;border-radius:8px;border:1px dashed #e6eefc;display:flex;justify-content:space-between;align-items:center}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;z-index:40}
+    .modal{background:white;width:420px;max-width:92%;border-radius:12px;padding:16px}
+    .modal textarea{width:100%;height:180px;padding:8px;border-radius:8px;border:1px solid #e6eefc}
+    .muted{color:var(--muted)}
+
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:0.9rem}
+
+    @media (max-width:720px){td.time{display:none}th.time{display:none}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>My Schedule</h1>
+        <p class="lead">Template jadwal sekolah Senin–Jumat. Wajib mengisikan mata pelajaran sendiri tiap hari. Simpan, unduh, atau cetak.</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.8rem;color:var(--muted);">Status: <span id="status">Belum ada data</span></div>
+      </div>
+    </header>
+
+    <div class="card" style="margin-top:14px">
+      <div class="controls">
+        <button id="addRow" class="small">+ Tambah baris waktu</button>
+        <button id="removeRow" class="small ghost">- Hapus baris terakhir</button>
+        <button id="reset" class="small ghost">Reset</button>
+        <button id="saveLocal" class="small">Simpan (Local)</button>
+        <button id="downloadCsv" class="small">Download CSV</button>
+        <button id="printView" class="small ghost">Cetak / Print</button>
+      </div>
+
+      <div class="days-row" id="daysEditArea">
+        <!-- Day quick-edit blocks inserted here -->
+      </div>
+
+      <div style="margin-top:12px;overflow:auto">
+        <table id="scheduleTable" aria-label="Jadwal">
+          <thead>
+            <tr>
+              <th class="time">Waktu</th>
+              <th>Senin</th>
+              <th>Selasa</th>
+              <th>Rabu</th>
+              <th>Kamis</th>
+              <th>Jumat</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- rows go here -->
+          </tbody>
+        </table>
+      </div>
+
+      <p class="muted" style="margin-top:10px">Petunjuk singkat: Klik tombol <strong>"Edit"</strong> pada hari untuk mengisi daftar mata pelajaran (satu baris = satu sesi). Jika jumlah baris tidak cocok, akan diisi dari atas.</p>
+    </div>
+
+    <footer class="muted">My Schedule — dibuat untuk cepat mengelola jadwal sekolahmu.</footer>
+  </div>
+
+  <!-- modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h3 id="modalTitle">Edit Hari</h3>
+      <p class="muted">Tulis satu mata pelajaran per baris sesuai urutan sesi (baris waktu di sebelah kiri).</p>
+      <textarea id="dayInput" placeholder="Contoh:\nMatematika\nBahasa Indonesia\nIPA\n..." spellcheck="false"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button id="modalSave">Simpan</button>
+        <button id="modalCancel" class="ghost">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data model
+    const defaultTimes = ['07:00 - 07:45','07:50 - 08:35','08:45 - 09:30','09:40 - 10:25','10:35 - 11:20','11:30 - 12:15'];
+    const days = ['Senin','Selasa','Rabu','Kamis','Jumat'];
+    let times = JSON.parse(localStorage.getItem('ms_times')) || defaultTimes.slice();
+    let data = JSON.parse(localStorage.getItem('ms_data')) || {}; // {day: [subjects...]}
+
+    // Initialize data structure
+    days.forEach(d=>{ if(!data[d]) data[d]=Array(times.length).fill(''); });
+
+    const tableBody = document.getElementById('tableBody');
+    const daysEditArea = document.getElementById('daysEditArea');
+    const statusEl = document.getElementById('status');
+
+    function render() {
+      // update status
+      const filled = days.reduce((acc,d)=> acc + data[d].filter(x=>x && x.trim()).length,0);
+      statusEl.textContent = filled ? `${filled} mata pelajaran terisi` : 'Belum ada data';
+
+      // render day edit blocks
+      daysEditArea.innerHTML='';
+      days.forEach(day=>{
+        const el = document.createElement('div');
+        el.className='day-edit';
+        el.innerHTML = `<div style="font-weight:600">${day}</div><div style="display:flex;gap:6px"><button class="ghost small" data-day="${day}">Edit</button><button class="small" data-day="${day}" data-action="clear">Clear</button></div>`;
+        daysEditArea.appendChild(el);
+      });
+
+      // render table rows
+      tableBody.innerHTML='';
+      times.forEach((t,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="time">${t}</td>` + days.map(d=>`<td class="cell" data-day="${d}" data-row="${i}">${escapeHtml(data[d][i]||'')}</td>`).join('');
+        tableBody.appendChild(tr);
+      });
+
+      // attach cell editing (double click)
+      document.querySelectorAll('td.cell').forEach(td=>{
+        td.ondblclick = e => {
+          const day = td.dataset.day; const row = +td.dataset.row;
+          const current = data[day][row] || '';
+          const value = prompt(`${day} — Masukkan mata pelajaran untuk sesi ${row+1}:`, current);
+          if(value!==null){ data[day][row]=value.trim(); saveLocal(); render(); }
+        }
+      });
+    }
+
+    function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    // Modal for bulk editing a day
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const dayInput = document.getElementById('dayInput');
+    let editingDay = null;
+
+    daysEditArea.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const day = btn.dataset.day; if(btn.dataset.action==='clear'){
+        if(!confirm(`Hapus semua mata pelajaran untuk ${day}?`)) return;
+        data[day] = Array(times.length).fill(''); saveLocal(); render(); return;
+      }
+      // open modal
+      editingDay = day; modalTitle.textContent = `Edit: ${day}`;
+      dayInput.value = data[day].filter(x=>x).join('\n');
+      modal.style.display='flex'; dayInput.focus();
+    });
+
+    document.getElementById('modalCancel').addEventListener('click', ()=>{ modal.style.display='none'; editingDay=null; });
+    document.getElementById('modalSave').addEventListener('click', ()=>{
+      if(!editingDay) return; const lines = dayInput.value.split('\n').map(s=>s.trim());
+      // fill into data[editingDay] sequentially
+      const arr = Array(times.length).fill(''); for(let i=0;i<times.length && i<lines.length;i++){ arr[i]=lines[i]; }
+      data[editingDay]=arr; saveLocal(); modal.style.display='none'; render();
+    });
+
+    // controls
+    document.getElementById('addRow').addEventListener('click', ()=>{
+      const newTime = prompt('Masukkan label waktu baru (contoh: 12:30 - 13:15):','12:30 - 13:15');
+      if(!newTime) return; times.push(newTime); days.forEach(d=> data[d].push('')); saveLocal(); render();
+    });
+    document.getElementById('removeRow').addEventListener('click', ()=>{
+      if(!confirm('Hapus baris waktu terakhir?')) return; times.pop(); days.forEach(d=> data[d].pop()); saveLocal(); render();
+    });
+    document.getElementById('reset').addEventListener('click', ()=>{
+      if(!confirm('Reset semua jadwal dan waktu ke default?')) return; times = defaultTimes.slice(); data = {}; days.forEach(d=> data[d]=Array(times.length).fill('')); saveLocal(); render();
+    });
+
+    function saveLocal(){ localStorage.setItem('ms_times', JSON.stringify(times)); localStorage.setItem('ms_data', JSON.stringify(data)); }
+    document.getElementById('saveLocal').addEventListener('click', ()=>{ saveLocal(); alert('Tersimpan ke Local Storage browser.'); });
+
+    // download CSV
+    function toCSV(){
+      const header = ['Waktu',...days];
+      const rows = [header].concat(times.map((t,i)=> [t,...days.map(d=> data[d][i] || '')]));
+      return rows.map(r=> r.map(v=> '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+    }
+    document.getElementById('downloadCsv').addEventListener('click', ()=>{
+      // ensure user has filled at least one day (requirement: wajib menginput mata pelajaran sendiri per harinya)
+      let allDaysHave = days.every(d=> data[d].some(x=>x && x.trim()));
+      if(!allDaysHave){ if(!confirm('Beberapa hari masih kosong — tetap lanjutkan download CSV?')) return; }
+      const csv = toCSV(); const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'my-schedule.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // print view
+    document.getElementById('printView').addEventListener('click', ()=>{
+      const w = window.open('', '_blank');
+      const style = `<style>body{font-family:Arial,helvetica,sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:8px;text-align:left}th{background:#eee}</style>`;
+      w.document.write('<title>Jadwal — Print</title>'+style+'<h2>Jadwal</h2>'+document.getElementById('scheduleTable').outerHTML);
+      w.document.close(); w.focus();
+    });
+
+    // init
+    render();
+
+    // accessibility: close modal on backdrop click
+    document.getElementById('modal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget){ modal.style.display='none'; } });
+  </script>
+</body>
+</html>
